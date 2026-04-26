@@ -1,8 +1,26 @@
+import * as webllm from 'https://esm.run/@mlc-ai/web-llm@0.2.79';
+
 const STORAGE_KEY = 'fading-memories.entries.v1';
 const INSIGHT_KEY = 'fading-memories.insight.v1';
 const INSIGHT_TIMESTAMP_KEY = 'fading-memories.insight.lastAt.v1';
 const ENTRY_TTL_MS = 72 * 60 * 60 * 1000;
 const SYNTHESIZE_COOLDOWN_MS = 7 * 24 * 60 * 60 * 1000;
+const MODEL_ID = 'Qwen2.5-0.5B-Instruct-q4f16_1-MLC';
+
+const SYSTEM_PROMPT = `You are reading a person's private journal entries from the past few days. The entries fade after 72 hours and the writer never re-reads them.
+
+Find ONE specific pattern across the entries and describe it in 2-3 short sentences. Look for:
+- A feeling that keeps coming up
+- A name mentioned multiple times
+- Something they keep returning to
+- A tension between what they want and what they're doing
+
+Rules:
+- Reference specific details from the entries (names, situations, exact short phrases)
+- Be direct and concrete, not vague
+- No advice, no preamble like "It seems..." or "Based on..."
+- 2-3 sentences total, plain prose, no lists or headers
+- If the entries are too sparse or unrelated to find a real pattern, say so in one sentence`;
 
 const $ = (sel) => document.querySelector(sel);
 const input = $('#entry-input');
@@ -12,9 +30,15 @@ const list = $('#entries-list');
 const emptyState = $('#empty-state');
 const synthBtn = $('#synthesize-btn');
 const actionsHint = $('#actions-hint');
+const progressBox = $('#progress-box');
+const progressBar = $('#progress-bar');
+const progressLabel = $('#progress-label');
 const insightSection = $('#insight-section');
 const insightText = $('#insight-text');
 const dismissInsightBtn = $('#dismiss-insight');
+
+let engine = null;
+let engineLoading = null;
 
 function loadEntries() {
   try {
@@ -120,7 +144,9 @@ function updateSynthesizeButton(entries) {
   }
 
   synthBtn.hidden = false;
-  actionsHint.textContent = 'Read once, then it disappears.';
+  actionsHint.textContent = engine
+    ? 'Read once, then it disappears.'
+    : 'First time loads a small model (~400MB) into your browser. After that it runs offline.';
 }
 
 function showStoredInsight() {
@@ -150,6 +176,69 @@ function addEntry(text) {
   saveEntries(entries);
 }
 
+function setProgress(visible, label, ratio) {
+  progressBox.hidden = !visible;
+  if (label != null) progressLabel.textContent = label;
+  if (ratio != null) progressBar.style.width = `${Math.max(0, Math.min(1, ratio)) * 100}%`;
+}
+
+async function getEngine() {
+  if (engine) return engine;
+  if (engineLoading) return engineLoading;
+
+  if (!('gpu' in navigator)) {
+    throw new Error(
+      'Your browser does not support WebGPU, which the on-device model needs. Try the latest Chrome, Edge, or Safari 17.4+.',
+    );
+  }
+
+  engineLoading = (async () => {
+    setProgress(true, 'Preparing model…', 0);
+    const created = await webllm.CreateMLCEngine(MODEL_ID, {
+      initProgressCallback: (report) => {
+        setProgress(true, report.text || 'Loading…', report.progress ?? 0);
+      },
+    });
+    setProgress(false);
+    engine = created;
+    return created;
+  })();
+
+  try {
+    return await engineLoading;
+  } catch (err) {
+    engineLoading = null;
+    setProgress(false);
+    throw err;
+  }
+}
+
+function formatEntriesForModel(entries) {
+  return entries
+    .map((e, i) => {
+      const when = new Date(e.createdAt).toISOString().slice(0, 10);
+      return `Entry ${i + 1} (${when}):\n${e.text}`;
+    })
+    .join('\n\n---\n\n');
+}
+
+async function runSynthesis(entries) {
+  const eng = await getEngine();
+  setProgress(true, 'Reading your entries…', 1);
+
+  const reply = await eng.chat.completions.create({
+    messages: [
+      { role: 'system', content: SYSTEM_PROMPT },
+      { role: 'user', content: formatEntriesForModel(entries) },
+    ],
+    temperature: 0.7,
+    max_tokens: 256,
+  });
+
+  setProgress(false);
+  return (reply.choices[0]?.message?.content || '').trim();
+}
+
 input.addEventListener('input', () => {
   charCount.textContent = `${input.value.length} character${input.value.length === 1 ? '' : 's'}`;
   saveBtn.disabled = input.value.trim().length === 0;
@@ -177,26 +266,14 @@ synthBtn.addEventListener('click', async () => {
   if (entries.length < 3) return;
 
   synthBtn.disabled = true;
-  synthBtn.textContent = 'Reading…';
+  const originalLabel = synthBtn.textContent;
+  synthBtn.textContent = 'Working…';
+  actionsHint.textContent = '';
 
   try {
-    const res = await fetch('/api/synthesize', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        entries: entries.map((e) => ({ text: e.text, createdAt: e.createdAt })),
-      }),
-    });
-
-    if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
-      throw new Error(data.error || 'Synthesis failed.');
-    }
-
-    const data = await res.json();
-    if (!data.insight) throw new Error('No insight returned.');
-
-    localStorage.setItem(INSIGHT_KEY, data.insight);
+    const insight = await runSynthesis(entries);
+    if (!insight) throw new Error('The model returned an empty response. Try again.');
+    localStorage.setItem(INSIGHT_KEY, insight);
     localStorage.setItem(INSIGHT_TIMESTAMP_KEY, String(Date.now()));
     showStoredInsight();
     render();
@@ -204,7 +281,7 @@ synthBtn.addEventListener('click', async () => {
     actionsHint.textContent = err.message || 'Could not surface a pattern right now.';
   } finally {
     synthBtn.disabled = false;
-    synthBtn.textContent = 'Surface a pattern from this week';
+    synthBtn.textContent = originalLabel;
   }
 });
 

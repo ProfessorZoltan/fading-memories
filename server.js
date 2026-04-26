@@ -1,68 +1,42 @@
-import express from 'express';
-import Anthropic from '@anthropic-ai/sdk';
-import 'dotenv/config';
+import { createServer } from 'http';
+import { readFile } from 'fs/promises';
+import { extname, join, normalize, sep } from 'path';
+import { fileURLToPath } from 'url';
 
-const app = express();
 const port = process.env.PORT || 3000;
+const publicDir = join(fileURLToPath(new URL('.', import.meta.url)), 'public');
 
-app.use(express.json({ limit: '1mb' }));
-app.use(express.static('public'));
+const types = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'application/javascript; charset=utf-8',
+  '.mjs': 'application/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.svg': 'image/svg+xml',
+  '.png': 'image/png',
+  '.ico': 'image/x-icon',
+};
 
-const client = new Anthropic();
+createServer(async (req, res) => {
+  const urlPath = req.url.split('?')[0];
+  const requested = urlPath === '/' ? '/index.html' : urlPath;
+  const resolved = normalize(join(publicDir, requested));
 
-const SYSTEM_PROMPT = `You are a thoughtful observer reading a person's private journal entries from the past week.
-The entries fade after 72 hours — the writer never re-reads them. Your job is to surface a single
-honest, specific pattern you noticed across the entries: a recurring feeling, a name that comes up,
-a tension between what they want and what they're doing, something they keep circling back to.
-
-Constraints:
-- Output 2 to 4 sentences. No headers, no bullet points, no preamble like "It seems..." or "I noticed...".
-- Be specific. Reference concrete details from the entries (names, situations, exact phrases) rather than vague summaries.
-- Do not be saccharine or therapeutic. Don't offer advice unless a pattern clearly calls for it.
-- If the entries are too sparse or unrelated to find a real pattern, say so plainly in one sentence.
-- Never quote entries verbatim at length. A short phrase in quotes is fine; full sentences are not.`;
-
-app.post('/api/synthesize', async (req, res) => {
-  const { entries } = req.body || {};
-
-  if (!Array.isArray(entries) || entries.length === 0) {
-    return res.status(400).json({ error: 'Need at least one entry to synthesize.' });
+  if (!resolved.startsWith(publicDir + sep) && resolved !== publicDir) {
+    res.writeHead(403);
+    res.end('Forbidden');
+    return;
   }
-
-  const formatted = entries
-    .map((e, i) => {
-      const when = e.createdAt ? new Date(e.createdAt).toISOString().slice(0, 10) : '';
-      return `Entry ${i + 1}${when ? ` (${when})` : ''}:\n${e.text}`;
-    })
-    .join('\n\n---\n\n');
 
   try {
-    const response = await client.messages.create({
-      model: 'claude-opus-4-7',
-      max_tokens: 1024,
-      thinking: { type: 'adaptive' },
-      system: SYSTEM_PROMPT,
-      messages: [{ role: 'user', content: formatted }],
-    });
-
-    const text = response.content
-      .filter((b) => b.type === 'text')
-      .map((b) => b.text)
-      .join('\n')
-      .trim();
-
-    res.json({ insight: text });
-  } catch (err) {
-    if (err instanceof Anthropic.APIError) {
-      console.error(`Claude API error ${err.status}:`, err.message);
-      res.status(502).json({ error: 'The synthesis service is unavailable right now. Try again later.' });
-    } else {
-      console.error('Unexpected error:', err);
-      res.status(500).json({ error: 'Something went wrong.' });
-    }
+    const data = await readFile(resolved);
+    const type = types[extname(resolved)] || 'application/octet-stream';
+    res.writeHead(200, { 'Content-Type': type });
+    res.end(data);
+  } catch {
+    res.writeHead(404);
+    res.end('Not found');
   }
-});
-
-app.listen(port, () => {
+}).listen(port, () => {
   console.log(`Fading Memories running on http://localhost:${port}`);
 });

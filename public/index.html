@@ -37,6 +37,10 @@
       <section class="actions">
         <button id="synthesize-btn" type="button" hidden>Surface a pattern from this week</button>
         <p class="actions-hint" id="actions-hint"></p>
+        <div class="progress" id="progress-box" hidden>
+          <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
+          <p class="progress-label" id="progress-label">Loading…</p>
+        </div>
       </section>
 
       <section class="entries">
@@ -47,11 +51,10 @@
 
       <footer>
         <p>
-          Entries live only in this browser. The synthesis call sends them to Claude once&mdash;the
-          server keeps no copy.
+          Entries and the synthesis model both live in this browser. Nothing leaves your device.
         </p>
       </footer>
     </main>
-    <script src="/app.js"></script>
+    <script type="module" src="/app.js"></script>
   </body>
 </html>
