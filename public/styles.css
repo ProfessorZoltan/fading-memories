@@ -279,7 +279,52 @@ footer {
 }
 
 footer p {
+  margin: 0 0 0.4rem;
+}
+
+footer p:last-child {
+  margin-bottom: 0;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color 0.15s ease;
+}
+
+a:hover {
+  border-bottom-color: var(--accent);
+}
+
+.prose article {
+  margin: 1.5rem 0 2.5rem;
+}
+
+.prose section + section {
+  margin-top: 2rem;
+}
+
+.prose h2 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--ink);
+  margin: 0 0 0.6rem;
+  letter-spacing: 0.01em;
+}
+
+.prose p {
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.7;
+  color: var(--ink);
   margin: 0;
+}
+
+.back-link {
+  margin: 2rem 0 0;
+  font-size: 0.95rem;
 }
 
 @media (max-width: 480px) {
