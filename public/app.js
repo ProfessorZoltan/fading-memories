@@ -1,5 +1,14 @@
+/* ==========================================================================
+   Fading Memories — public/app.js
+   Drop-in replacement. Same DOM ids, same storage key, same public behavior.
+   New: time-aware fade curve (sharp collapse in the final hour) + "nearly
+   gone" label + per-minute re-render that drops to per-second in the final
+   hour so the bleed is visible in real time.
+   ========================================================================== */
+
 const STORAGE_KEY = 'fading-memories.entries.v1';
 const ENTRY_TTL_MS = 72 * 60 * 60 * 1000;
+const FINAL_HOUR_MS = 60 * 60 * 1000;
 
 const $ = (sel) => document.querySelector(sel);
 const input = $('#entry-input');
@@ -32,15 +41,32 @@ function formatRemaining(ms) {
   const totalMin = Math.floor(ms / 60000);
   const hours = Math.floor(totalMin / 60);
   const minutes = totalMin % 60;
-  if (hours >= 1) return `${hours}h ${minutes}m left`;
+  if (hours >= 1) return `${hours}h ${minutes.toString().padStart(2, '0')}m left`;
   if (minutes >= 1) return `${minutes}m left`;
-  return '<1m left';
+  const sec = Math.max(0, Math.floor(ms / 1000));
+  return `${sec}s left`;
 }
 
-function fadeOpacity(createdAt) {
-  const age = Date.now() - createdAt;
-  const ratio = Math.min(1, Math.max(0, age / ENTRY_TTL_MS));
-  return 1 - ratio * 0.55;
+/* Linear — steady fade.
+   Returns { opacity, blur, desat, spread } as a smooth linear function of
+   age across the full 72-hour life. Opacity goes 1.0 → 0.15. */
+function fadeFor(createdAt) {
+  const age = Math.max(0, Date.now() - createdAt);
+  const r = Math.min(1, age / ENTRY_TTL_MS);
+  return {
+    opacity: 1 - r * 0.85,
+    blur: r * 0.6,
+    desat: r * 0.4,
+    spread: r * 0.3,
+  };
+}
+
+function applyFade(li, createdAt) {
+  const f = fadeFor(createdAt);
+  li.style.setProperty('--entry-opacity', f.opacity.toFixed(3));
+  li.style.setProperty('--entry-blur', f.blur.toFixed(3));
+  li.style.setProperty('--entry-desat', f.desat.toFixed(3));
+  li.style.setProperty('--entry-spread', f.spread.toFixed(3));
 }
 
 function render() {
@@ -55,7 +81,7 @@ function render() {
     for (const e of entries) {
       const li = document.createElement('li');
       li.className = 'entry';
-      li.style.opacity = fadeOpacity(e.createdAt).toFixed(2);
+      applyFade(li, e.createdAt);
 
       const p = document.createElement('p');
       p.className = 'entry-text';
@@ -68,20 +94,51 @@ function render() {
       fade.className = 'entry-fade';
       fade.textContent = formatRemaining(ENTRY_TTL_MS - (Date.now() - e.createdAt));
 
+      const right = document.createElement('span');
+      right.className = 'entry-meta-right';
+      right.style.display = 'inline-flex';
+      right.style.alignItems = 'center';
+      right.style.gap = '0.4rem';
+
+      const remaining = ENTRY_TTL_MS - (Date.now() - e.createdAt);
+      if (remaining < FINAL_HOUR_MS && remaining > 0) {
+        const tag = document.createElement('span');
+        tag.className = 'entry-final';
+        tag.textContent = 'nearly gone';
+        right.appendChild(tag);
+      }
+
       const del = document.createElement('button');
       del.className = 'entry-delete';
       del.type = 'button';
       del.textContent = 'delete now';
       del.addEventListener('click', () => deleteEntry(e.id));
+      right.appendChild(del);
 
       meta.appendChild(fade);
-      meta.appendChild(del);
+      meta.appendChild(right);
 
       li.appendChild(p);
       li.appendChild(meta);
       list.appendChild(li);
     }
   }
+
+  scheduleNextTick();
+}
+
+/* Tick scheduler: 60s normally, 1s if any entry is in its final hour, so the
+   bleed animates visibly without burning CPU when nothing is close to fading. */
+let tickTimer = null;
+function scheduleNextTick() {
+  if (tickTimer) clearTimeout(tickTimer);
+  const entries = loadEntries();
+  const now = Date.now();
+  const anyFinalHour = entries.some((e) => {
+    const remaining = ENTRY_TTL_MS - (now - e.createdAt);
+    return remaining > 0 && remaining < FINAL_HOUR_MS;
+  });
+  tickTimer = setTimeout(render, anyFinalHour ? 1000 : 60 * 1000);
 }
 
 function deleteEntry(id) {
@@ -125,4 +182,3 @@ input.addEventListener('keydown', (e) => {
 
 saveBtn.disabled = true;
 render();
-setInterval(render, 60 * 1000);
