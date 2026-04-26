@@ -1,11 +1,11 @@
-const CACHE_NAME = 'fading-memories-v1';
+const CACHE_NAME = 'fading-memories-v2';
 const APP_SHELL = [
   './',
   './index.html',
   './about.html',
   './styles.css',
   './app.js',
-  './manifest.webmanifest',
+  './manifest.json',
   './icon.svg',
   './icon-192.png',
   './icon-512.png',
