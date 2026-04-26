@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#1a1814" />
+    <title>Fading Memories</title>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <main>
+      <header>
+        <h1>Fading Memories</h1>
+        <p class="tagline">Write like no one's watching. Because no one ever will&mdash;including you.</p>
+      </header>
+
+      <section class="composer">
+        <textarea
+          id="entry-input"
+          placeholder="What's on your mind? It vanishes in 72 hours."
+          rows="6"
+          autocomplete="off"
+        ></textarea>
+        <div class="composer-row">
+          <span class="hint" id="char-count">0 characters</span>
+          <button id="save-btn" type="button">Let it fade</button>
+        </div>
+      </section>
+
+      <section class="insight" id="insight-section" hidden>
+        <h2>This week's insight</h2>
+        <p id="insight-text"></p>
+        <p class="insight-meta">Read once. It will not be saved.</p>
+        <button id="dismiss-insight" type="button">I've read it</button>
+      </section>
+
+      <section class="actions">
+        <button id="synthesize-btn" type="button" hidden>Surface a pattern from this week</button>
+        <p class="actions-hint" id="actions-hint"></p>
+      </section>
+
+      <section class="entries">
+        <h2 id="entries-heading">Fading</h2>
+        <ul id="entries-list"></ul>
+        <p class="empty" id="empty-state">Nothing here yet.</p>
+      </section>
+
+      <footer>
+        <p>
+          Entries live only in this browser. The synthesis call sends them to Claude once&mdash;the
+          server keeps no copy.
+        </p>
+      </footer>
+    </main>
+    <script src="/app.js"></script>
+  </body>
+</html>

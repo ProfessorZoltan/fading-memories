@@ -1,0 +1,269 @@
+:root {
+  --bg: #1a1814;
+  --bg-elev: #221f1a;
+  --bg-elev-2: #2a2620;
+  --ink: #ece6dc;
+  --ink-dim: #a89e90;
+  --ink-faint: #6b6358;
+  --accent: #d4a373;
+  --accent-soft: #b9885c;
+  --danger: #c87c6e;
+  --border: #3a342c;
+  --radius: 10px;
+  --font-serif: ui-serif, Georgia, "Iowan Old Style", "Apple Garamond", Baskerville, serif;
+  --font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.55;
+  min-height: 100vh;
+}
+
+main {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem 4rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: clamp(1.8rem, 5vw, 2.4rem);
+  letter-spacing: 0.01em;
+  margin: 0 0 0.4rem;
+  color: var(--ink);
+}
+
+h2 {
+  font-family: var(--font-serif);
+  font-weight: 500;
+  font-size: 1.2rem;
+  margin: 0 0 0.8rem;
+  color: var(--ink-dim);
+  letter-spacing: 0.02em;
+}
+
+.tagline {
+  color: var(--ink-dim);
+  font-style: italic;
+  margin: 0;
+  font-size: 0.95rem;
+}
+
+.composer {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+}
+
+#entry-input {
+  width: 100%;
+  background: transparent;
+  border: none;
+  color: var(--ink);
+  font-family: var(--font-serif);
+  font-size: 1.05rem;
+  line-height: 1.6;
+  resize: vertical;
+  outline: none;
+  min-height: 120px;
+}
+
+#entry-input::placeholder {
+  color: var(--ink-faint);
+  font-style: italic;
+}
+
+.composer-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.hint {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+}
+
+button {
+  background: var(--accent);
+  color: #1a1814;
+  border: none;
+  border-radius: 6px;
+  padding: 0.55rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease, opacity 0.15s ease;
+  font-family: inherit;
+}
+
+button:hover:not(:disabled) {
+  background: var(--accent-soft);
+}
+
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button.secondary {
+  background: transparent;
+  color: var(--ink-dim);
+  border: 1px solid var(--border);
+}
+
+button.secondary:hover:not(:disabled) {
+  background: var(--bg-elev-2);
+  color: var(--ink);
+}
+
+.actions {
+  margin: 0 0 1.5rem;
+  text-align: center;
+}
+
+.actions-hint {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  margin: 0.5rem 0 0;
+  font-style: italic;
+}
+
+.insight {
+  background: linear-gradient(180deg, var(--bg-elev-2), var(--bg-elev));
+  border: 1px solid var(--accent-soft);
+  border-radius: var(--radius);
+  padding: 1.25rem;
+  margin-bottom: 1.5rem;
+}
+
+.insight h2 {
+  color: var(--accent);
+  margin-bottom: 0.5rem;
+}
+
+#insight-text {
+  font-family: var(--font-serif);
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin: 0 0 0.75rem;
+}
+
+.insight-meta {
+  color: var(--ink-faint);
+  font-size: 0.85rem;
+  font-style: italic;
+  margin: 0 0 1rem;
+}
+
+.entries h2 {
+  display: flex;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+#entries-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.entry {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.9rem 1rem;
+  margin-bottom: 0.75rem;
+  position: relative;
+}
+
+.entry-text {
+  font-family: var(--font-serif);
+  font-size: 1rem;
+  line-height: 1.55;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0 0 0.5rem;
+}
+
+.entry-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+}
+
+.entry-fade {
+  font-variant-numeric: tabular-nums;
+}
+
+.entry-delete {
+  background: transparent;
+  color: var(--ink-faint);
+  border: none;
+  padding: 0.2rem 0.4rem;
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.entry-delete:hover {
+  color: var(--danger);
+  background: transparent;
+}
+
+.empty {
+  color: var(--ink-faint);
+  font-style: italic;
+  text-align: center;
+  padding: 1.5rem 0;
+  margin: 0;
+}
+
+footer {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border);
+  color: var(--ink-faint);
+  font-size: 0.8rem;
+  text-align: center;
+}
+
+footer p {
+  margin: 0;
+}
+
+@media (max-width: 480px) {
+  main {
+    padding: 1.5rem 1rem 3rem;
+  }
+  .composer-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .composer-row button {
+    width: 100%;
+  }
+}
