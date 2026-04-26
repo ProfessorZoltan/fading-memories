@@ -27,22 +27,6 @@
         </div>
       </section>
 
-      <section class="insight" id="insight-section" hidden>
-        <h2>This week's insight</h2>
-        <p id="insight-text"></p>
-        <p class="insight-meta">Read once. It will not be saved.</p>
-        <button id="dismiss-insight" type="button">I've read it</button>
-      </section>
-
-      <section class="actions">
-        <button id="synthesize-btn" type="button" hidden>Surface a pattern from this week</button>
-        <p class="actions-hint" id="actions-hint"></p>
-        <div class="progress" id="progress-box" hidden>
-          <div class="progress-track"><div class="progress-fill" id="progress-bar"></div></div>
-          <p class="progress-label" id="progress-label">Loading…</p>
-        </div>
-      </section>
-
       <section class="entries">
         <h2 id="entries-heading">Fading</h2>
         <ul id="entries-list"></ul>
@@ -50,12 +34,10 @@
       </section>
 
       <footer>
-        <p>
-          Entries and the synthesis model both live in this browser. Nothing leaves your device.
-        </p>
+        <p>Entries live only in this browser. Nothing leaves your device.</p>
         <p><a href="/about.html">About</a></p>
       </footer>
     </main>
-    <script type="module" src="/app.js"></script>
+    <script src="/app.js"></script>
   </body>
 </html>
